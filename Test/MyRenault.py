@@ -105,6 +105,34 @@ async def get_batterystatus(session, kamereonrooturl, kamereonapikey, gigya_jwtt
             raise MyRenaultServiceException(jsonresponse['message'])
         return jsonresponse
 
+async def get_cockpit(session, kamereonrooturl, kamereonapikey, gigya_jwttoken, kamereonaccesstoken, vin):
+    headers = {'x-gigya-id_token': gigya_jwttoken, 'apikey': kamereonapikey, 'x-kamereon-authorization' : 'Bearer ' + kamereonaccesstoken}
+    url = kamereonrooturl + '/commerce/v1/accounts/kmr/remote-services/car-adapter/v1/cars/' + vin + '/cockpit'
+    #print(url)
+    async with session.get(url, headers=headers) as response:
+        responsetext = await response.text()
+        if responsetext == '':
+            responsetext = '{}'
+        jsonresponse = json.loads(responsetext)
+        if 'message' in jsonresponse:
+            self.tokenData = None
+            raise MyRenaultServiceException(jsonresponse['message'])
+        return jsonresponse
+
+async def get_hvac(session, kamereonrooturl, kamereonapikey, gigya_jwttoken, kamereonaccesstoken, vin):
+    headers = {'x-gigya-id_token': gigya_jwttoken, 'apikey': kamereonapikey, 'x-kamereon-authorization' : 'Bearer ' + kamereonaccesstoken}
+    url = kamereonrooturl + '/commerce/v1/accounts/kmr/remote-services/car-adapter/v1/cars/' + vin + '/hvac-status'
+    #print(url)
+    async with session.get(url, headers=headers) as response:
+        responsetext = await response.text()
+        if responsetext == '':
+            responsetext = '{}'
+        jsonresponse = json.loads(responsetext)
+        if 'message' in jsonresponse:
+            self.tokenData = None
+            raise MyRenaultServiceException(jsonresponse['message'])
+        return jsonresponse
+
 async def main():
     async with aiohttp.ClientSession(
             ) as session:
@@ -178,7 +206,20 @@ async def mainwithsession(session):
     kamereonaccesstoken = kamereon_token['accessToken']
 
     kamereon_battery = await get_batterystatus(session, kamereonrooturl, kamereonapikey, gigya_jwttoken, kamereonaccesstoken, credentials['VIN'])
+    with open('kamereon_battery.json', 'w') as outfile:
+        json.dump(kamereon_battery, outfile)
     print(kamereon_battery)
+
+    kamereon_cockpit = await get_cockpit(session, kamereonrooturl, kamereonapikey, gigya_jwttoken, kamereonaccesstoken, credentials['VIN'])
+    with open('kamereon_cockpit.json', 'w') as outfile:
+        json.dump(kamereon_cockpit, outfile)
+    print(kamereon_cockpit)
+
+
+    kamereon_hvac = await get_hvac(session, kamereonrooturl, kamereonapikey, gigya_jwttoken, kamereonaccesstoken, credentials['VIN'])
+    with open('kamereon_hvac.json', 'w') as outfile:
+        json.dump(kamereon_hvac, outfile)
+    print(kamereon_hvac)
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
